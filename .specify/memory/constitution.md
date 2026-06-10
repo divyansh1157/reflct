@@ -1,54 +1,66 @@
 <!--
 Sync Impact Report:
-- Version change: [NONE] → 1.0.0
+- Version change: N/A → 1.0.0
 - List of modified principles:
-  - [PRINCIPLE_1_NAME] → I. Spec-Driven Development (SDD)
-  - [PRINCIPLE_2_NAME] → II. Formal Implementation Planning
-  - [PRINCIPLE_3_NAME] → III. Task-Based Incremental Delivery
-  - [PRINCIPLE_4_NAME] → IV. Verification & Quality Gates
-  - [PRINCIPLE_5_NAME] → V. Document Traceability
-- Added sections: Development Workflow, Complexity Management
+  - [PRINCIPLE_1_NAME] → I. Vanilla Web Standards
+  - [PRINCIPLE_2_NAME] → II. Clean & Readable Code
+  - [PRINCIPLE_3_NAME] → III. Comprehensive Documentation
+  - [PRINCIPLE_4_NAME] → IV. Mobile-First Responsive Design
+  - [PRINCIPLE_5_NAME] → V. Performance & Accessibility
+- Added sections: Technology Stack, Quality Assurance
 - Removed sections: None
 - Templates requiring updates:
-  - .specify/templates/plan-template.md (✅ updated)
-  - .specify/templates/spec-template.md (✅ updated)
   - .specify/templates/tasks-template.md (✅ updated)
+  - .specify/templates/plan-template.md (✅ updated)
 - Follow-up TODOs: None
 -->
 
-# Reflct Constitution
+# reflct Constitution
 
 ## Core Principles
 
-### I. Spec-Driven Development (SDD)
-Every feature MUST start with a formal specification (`spec.md`) that defines user scenarios, functional requirements, and success criteria. No implementation or technical planning may begin until the specification is established and reviewed. This ensures alignment on "WHAT" is being built before deciding "HOW".
+### I. Vanilla Web Standards
+The project MUST use standard HTML5, CSS3, and Vanilla JavaScript (ES6+). No external frameworks 
+(React, Vue, Angular) or libraries that abstract core DOM interactions are allowed. This ensures 
+long-term maintainability and performance without dependency bloat.
 
-### II. Formal Implementation Planning
-A technical implementation plan (`plan.md`) MUST be created for every feature. The plan bridges the gap between requirements and code by defining the architecture, project structure, and technical strategy. It serves as the blueprint for task generation and implementation.
+### II. Clean & Readable Code
+Code MUST be written for humans first. Use descriptive variable and function names. Maintain 
+consistent indentation and logical grouping of related functionality. Complexity must be 
+refactored into simple, well-named functions.
 
-### III. Task-Based Incremental Delivery
-Features MUST be decomposed into discrete, dependency-ordered tasks (`tasks.md`) organized by user story. Each user story MUST deliver independent value and be testable as a standalone increment (MVP-first approach). This minimizes risk and enables faster feedback loops.
+### III. Comprehensive Documentation
+EVERY function MUST include a comment block describing its purpose, parameters, and return 
+values. Complex logic blocks within functions should also be explained. This is non-negotiable 
+to ensure the codebase remains accessible to all contributors.
 
-### IV. Verification & Quality Gates
-All requirements and success criteria defined in the specification MUST be verified. A feature is only considered complete when its corresponding success criteria are met and all tasks are verified. Quality is a non-negotiable gate at every stage of the lifecycle.
+### IV. Mobile-First Responsive Design
+The UI MUST be mobile-friendly by default. Use responsive CSS techniques (Flexbox, Grid, Media 
+Queries) to ensure seamless operation across all screen sizes. Designs must be tested on small 
+screens before being finalized for desktop.
 
-### V. Document Traceability
-The entire development lifecycle MUST be fully traceable through standardized artifacts: Spec → Plan → Tasks → Implementation. This traceability ensures that every line of code can be linked back to a user requirement and a technical decision.
+### V. Performance & Accessibility
+Prioritize fast load times by minimizing asset sizes and avoiding unnecessary DOM manipulations. 
+Ensure semantic HTML is used to maintain accessibility (A11y) for screen readers and other 
+assistive technologies.
 
-## Development Workflow
-The Reflct project adheres to a structured, command-driven workflow to ensure consistency and quality:
-1. **Specification**: Use `/speckit.specify` to define requirements.
-2. **Planning**: Use `/speckit.plan` to design the implementation.
-3. **Execution**: Use `/speckit.tasks` to generate actionable work items.
-4. **Implementation**: Execute tasks and verify completion.
+## Technology Stack
 
-## Complexity Management
-Architectural complexity MUST be justified against the core principles. We prioritize simplicity and "You Aren't Gonna Need It" (YAGNI) unless a more complex solution is required to meet the functional requirements or maintainability goals. Every architectural decision should be documented in the feature's `plan.md` or `research.md`.
+- **HTML**: Semantic HTML5 markup only.
+- **CSS**: Modern CSS3 using Flexbox and Grid. No CSS-in-JS or heavy preprocessors unless 
+  explicitly justified.
+- **JavaScript**: Modern ES6+ Vanilla JS. Browser APIs should be used directly.
+
+## Quality Assurance
+
+- All code must pass manual cross-browser testing (Chrome, Safari, Firefox).
+- Functional verification must be performed on both desktop and mobile viewports.
+- Code reviews must strictly enforce the "Comprehensive Documentation" principle.
 
 ## Governance
-This constitution supersedes all other informal practices within the Reflct project.
-- **Amendments**: Changes to these principles require an update to this document, a version bump, and a consistency review of all dependent templates.
-- **Compliance**: All feature specifications, plans, and tasks must be reviewed for compliance with these principles.
-- **Versioning**: Follows semantic versioning (MAJOR for principle removals/redefinitions, MINOR for additions, PATCH for clarifications).
+
+All contributions must adhere to these core principles. The constitution is the ultimate authority 
+for architectural decisions. Amendments require a version bump and project-wide consensus. PRs 
+that introduce frameworks or undocumented functions will be rejected.
 
 **Version**: 1.0.0 | **Ratified**: 2026-06-10 | **Last Amended**: 2026-06-10

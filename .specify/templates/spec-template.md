@@ -1,8 +1,10 @@
 # Feature Specification: [FEATURE NAME]
 
-**Feature Branch**: `[###-feature-name]` | **Created**: [DATE]
+**Feature Branch**: `[###-feature-name]`
 
-**Status**: Draft | **Constitution Compliance**: [PENDING/YES]
+**Created**: [DATE]
+
+**Status**: Draft
 
 **Input**: User description: "$ARGUMENTS"
 

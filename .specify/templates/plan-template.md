@@ -20,7 +20,7 @@
 
 **Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
 
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
+**Primary Dependencies**: [e.g., None (Vanilla JS), specific utility libs, or NEEDS CLARIFICATION]
 
 **Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
 
@@ -40,11 +40,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [ ] **I. Spec-Driven Development**: Does this plan accurately reflect the functional requirements and success criteria defined in the spec?
-- [ ] **II. Formal Implementation Planning**: Does this plan provide a clear architecture and project structure for the feature?
-- [ ] **III. Task-Based Incremental Delivery**: Is the proposed structure compatible with user story-based task decomposition?
-- [ ] **IV. Verification & Quality Gates**: Does the technical approach allow for full verification of success criteria?
-- [ ] **V. Document Traceability**: Are all technical decisions documented and linked back to requirements?
+[Gates determined based on constitution file]
 
 ## Project Structure
 
