@@ -223,33 +223,31 @@
             const apiKey = Storage.getApiKey();
             if (!apiKey) throw new Error('API Key missing');
 
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: {
-                    'x-api-key': apiKey,
-                    'anthropic-version': '2023-06-01',
-                    'content-type': 'application/json',
-                    'dangerouslyAllowBrowser': 'true' // Explicitly allowed for this client-side demo
-                },
-                body: JSON.stringify({
-                    model: 'claude-3-haiku-20240307',
-                    max_tokens: 300,
-                    messages: [
-                        {
-                            role: 'user',
-                            content: `Mood: ${mood}\nNote: ${note}\n\nPlease provide a warm, empathetic reflection in 2-3 sentences.`
-                        }
-                    ]
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error?.message || 'API request failed');
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        max_tokens: 300,
+        messages: [
+            {
+                role: 'user',
+                content: `Mood: ${mood}\nNote: ${note}\n\nPlease provide a warm, empathetic reflection in 2-3 sentences.`
             }
+        ]
+    })
+});
 
-            const data = await response.json();
-            return data.content[0].text;
+if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error?.message || 'API request failed');
+}
+
+const data = await response.json();
+return data.choices[0].message.content;
         }
     };
 
@@ -261,7 +259,7 @@
     function ensureApiKey() {
         let key = Storage.getApiKey();
         if (!key) {
-            key = prompt('Please enter your Anthropic API Key to enable AI reflections:');
+            key = prompt('Please enter your OpenAI API Key to enable AI reflections:');
             if (key) {
                 Storage.setApiKey(key);
             } else {
