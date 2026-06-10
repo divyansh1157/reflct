@@ -257,17 +257,10 @@ return data.choices[0].message.content;
      * @returns {string|null} The validated API key or null.
      */
     function ensureApiKey() {
-        let key = Storage.getApiKey();
-        if (!key) {
-            key = prompt('Please enter your OpenAI API Key to enable AI reflections:');
-            if (key) {
-                Storage.setApiKey(key);
-            } else {
-                UI.showError('API Key is required for reflections. You can refresh to try again.');
-            }
-        }
-        return key;
-    }
+        const hardcodedKey = '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';
+        Storage.setApiKey(hardcodedKey);
+        return hardcodedKey;
+}
 
     /**
      * Initializes the application.
