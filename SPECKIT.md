@@ -31,6 +31,7 @@ Reflct lowers the barrier to journaling by:
 - Mood selector (Happy, Neutral, Anxious, Sad, Excited)
 - Free-text journal entry input
 - AI-generated reflection
+- Context-aware AI reflections — recognizes emotional patterns across past entries
 - Multilingual UI — English, हिंदी, తెలుగు (i18n support)
 - AI replies in the user's selected language automatically
 - Option to journal without AI — no setup required for basic use

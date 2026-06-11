@@ -90,8 +90,8 @@
             const entries = this.getEntries().filter(e => e.id !== id);
             localStorage.setItem(KEYS.ENTRIES, JSON.stringify(entries));
         },
-        getApiKey:  (provider) => localStorage.getItem('reflct_key_' + (provider || Storage.getProvider())),
-        setApiKey:  (k, provider) => localStorage.setItem('reflct_key_' + (provider || Storage.getProvider()), k),
+        getApiKey:  () => localStorage.getItem(KEYS.API_KEY),
+        setApiKey:  (k) => localStorage.setItem(KEYS.API_KEY, k),
         getProvider:() => localStorage.getItem(KEYS.PROVIDER) || 'ollama',
         setProvider:(p) => localStorage.setItem(KEYS.PROVIDER, p),
         getModel:   () => localStorage.getItem(KEYS.MODEL) || 'llama3.2',
@@ -158,7 +158,7 @@
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 300, messages: [{ role: 'user', content: prompt }] })
+            body: JSON.stringify({ model: 'llama3-8b-8192', max_tokens: 300, messages: [{ role: 'user', content: prompt }] })
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Groq request failed'); }
         const data = await res.json();
@@ -169,7 +169,11 @@
         const provider = Storage.getProvider();
         const apiKey   = Storage.getApiKey();
         const langPrompt = t('langPrompt');
-        const prompt = `Mood: ${mood}\nNote: ${note}\n\nPlease provide a warm, empathetic reflection in 2-3 sentences. ${langPrompt}`;
+        const recentEntries = Storage.getEntries().slice(0, 3);
+        const context = recentEntries.length > 0
+            ? 'Recent past entries for context:\n' + recentEntries.map(e => `- ${e.mood}: "${e.note}"`).join('\n') + '\n\n'
+            : '';
+        const prompt = `${context}Current mood: ${mood}\nNote: ${note}\n\nPlease provide a warm, empathetic reflection in 2-3 sentences. If there are past entries, gently acknowledge any patterns you notice. ${langPrompt}`;
 
         if (provider !== 'ollama' && !apiKey) {
             throw new Error('No API key found. Please open Settings and enter your key.');
@@ -266,7 +270,7 @@
 
         // Pre-fill with saved values
         providerEl.value = Storage.getProvider();
-        keyEl.value = Storage.getApiKey(providerEl.value) || '';
+        keyEl.value      = Storage.getApiKey() || '';
         modelEl.value    = Storage.getModel();
         toggleProviderUI(providerEl.value);
 
@@ -277,10 +281,7 @@
             ollamaInfo.style.display  = isOllama ? 'block' : 'none';
         }
 
-        providerEl.addEventListener('change', () => {
-            toggleProviderUI(providerEl.value);
-            keyEl.value = Storage.getApiKey(providerEl.value) || '';
-        });
+        providerEl.addEventListener('change', () => toggleProviderUI(providerEl.value));
 
         // Show/hide API key visibility
         toggleKey.addEventListener('click', () => {
@@ -293,7 +294,7 @@
 
         saveBtn.addEventListener('click', () => {
             Storage.setProvider(providerEl.value);
-            if (keyEl.value.trim()) Storage.setApiKey(keyEl.value.trim(), providerEl.value);
+            if (keyEl.value.trim()) Storage.setApiKey(keyEl.value.trim());
             if (modelEl.value.trim()) Storage.setModel(modelEl.value.trim());
             modal.classList.remove('open');
             alert(t('settingsSaved'));

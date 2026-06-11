@@ -13,6 +13,7 @@ Supports **3 languages** (English, हिंदी, తెలుగు) and mult
 - Mood selector (Happy, Neutral, Anxious, Sad, Excited)
 - Free-text daily journal entry
 - AI-generated empathetic reflection
+- AI remembers your last 3 entries and notices emotional patterns
 - Supports **Ollama (local/offline)**, Gemini, OpenAI, and Groq
 - BYOK — Bring Your Own Key for online providers
 - Journal without AI using "Skip AI & Just Save"
