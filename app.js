@@ -90,8 +90,8 @@
             const entries = this.getEntries().filter(e => e.id !== id);
             localStorage.setItem(KEYS.ENTRIES, JSON.stringify(entries));
         },
-        getApiKey:  () => localStorage.getItem(KEYS.API_KEY),
-        setApiKey:  (k) => localStorage.setItem(KEYS.API_KEY, k),
+        getApiKey:  (provider) => localStorage.getItem('reflct_key_' + (provider || Storage.getProvider())),
+        setApiKey:  (k, provider) => localStorage.setItem('reflct_key_' + (provider || Storage.getProvider()), k),
         getProvider:() => localStorage.getItem(KEYS.PROVIDER) || 'ollama',
         setProvider:(p) => localStorage.setItem(KEYS.PROVIDER, p),
         getModel:   () => localStorage.getItem(KEYS.MODEL) || 'llama3.2',
@@ -266,7 +266,7 @@
 
         // Pre-fill with saved values
         providerEl.value = Storage.getProvider();
-        keyEl.value      = Storage.getApiKey() || '';
+        keyEl.value = Storage.getApiKey(providerEl.value) || '';
         modelEl.value    = Storage.getModel();
         toggleProviderUI(providerEl.value);
 
@@ -277,7 +277,10 @@
             ollamaInfo.style.display  = isOllama ? 'block' : 'none';
         }
 
-        providerEl.addEventListener('change', () => toggleProviderUI(providerEl.value));
+        providerEl.addEventListener('change', () => {
+            toggleProviderUI(providerEl.value);
+            keyEl.value = Storage.getApiKey(providerEl.value) || '';
+        });
 
         // Show/hide API key visibility
         toggleKey.addEventListener('click', () => {
@@ -290,7 +293,7 @@
 
         saveBtn.addEventListener('click', () => {
             Storage.setProvider(providerEl.value);
-            if (keyEl.value.trim()) Storage.setApiKey(keyEl.value.trim());
+            if (keyEl.value.trim()) Storage.setApiKey(keyEl.value.trim(), providerEl.value);
             if (modelEl.value.trim()) Storage.setModel(modelEl.value.trim());
             modal.classList.remove('open');
             alert(t('settingsSaved'));
