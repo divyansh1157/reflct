@@ -1,106 +1,225 @@
 /**
  * app.js - Main application logic for Reflct.
- * 
- * This application allows users to log their daily mood and notes,
- * generating an AI-powered reflection using the Google Gemini API.
- * Data is persisted locally using browser localStorage.
+ * Supports: Ollama (local), Gemini, OpenAI, Groq (BYOK)
+ * i18n: English, Hindi, Telugu
  */
 
-(function() {
+(function () {
     'use strict';
 
-    // Constants for storage keys
-    const STORAGE_KEY_ENTRIES = 'reflct_entries';
-    const STORAGE_KEY_API_KEY = 'reflct_api_key';
+    // ── Storage Keys ──────────────────────────────────────────
+    const KEYS = {
+        ENTRIES:  'reflct_entries',
+        API_KEY:  'reflct_api_key',
+        PROVIDER: 'reflct_provider',
+        MODEL:    'reflct_ollama_model',
+        LANG:     'reflct_lang'
+    };
 
-    function createJournalEntry(mood, note, reflection) {
-        return {
-            id: Date.now().toString(),
-            mood: mood,
-            note: note,
-            reflection: reflection,
-            timestamp: Date.now()
-        };
-    }
-
-    const Storage = {
-        getEntries: function() {
-            const data = localStorage.getItem(STORAGE_KEY_ENTRIES);
-            return data ? JSON.parse(data) : [];
+    // ── Translations ──────────────────────────────────────────
+    // All UI text lives here. To add a new language, add a new block.
+    const T = {
+        en: {
+            tagline:     'A warm space for your thoughts.',
+            heading:     'How are you feeling?',
+            placeholder: 'Write a short note about your day...',
+            saveBtn:     'Save & Reflect',
+            reflecting:  'Reflecting...',
+            history:     'Past Entries',
+            noEntries:   'No entries yet. Start by logging your mood!',
+            deleteConfirm: 'Are you sure you want to delete this entry?',
+            errMood:     'Please select a mood.',
+            errNote:     'Please write a short note.',
+            errFail:     'Failed to get reflection: ',
+            reflectionLabel: 'Reflection',
+            settingsSaved: 'Settings saved!',
+            langPrompt:  'Reply in English.'
         },
-        saveEntry: function(entry) {
-            const entries = this.getEntries();
-            entries.unshift(entry);
-            localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
+        hi: {
+            tagline:     'आपके विचारों के लिए एक गर्म जगह।',
+            heading:     'आप कैसा महसूस कर रहे हैं?',
+            placeholder: 'अपने दिन के बारे में कुछ लिखें...',
+            saveBtn:     'सहेजें और सोचें',
+            reflecting:  'सोच रहे हैं...',
+            history:     'पिछली प्रविष्टियाँ',
+            noEntries:   'अभी तक कोई प्रविष्टि नहीं। अपना मूड लॉग करें!',
+            deleteConfirm: 'क्या आप इस प्रविष्टि को हटाना चाहते हैं?',
+            errMood:     'कृपया एक मूड चुनें।',
+            errNote:     'कृपया एक छोटी नोट लिखें।',
+            errFail:     'रिफ्लेक्शन प्राप्त करने में विफल: ',
+            reflectionLabel: 'विचार',
+            settingsSaved: 'सेटिंग्स सहेजी गईं!',
+            langPrompt:  'हिंदी में उत्तर दें।'
         },
-        deleteEntry: function(id) {
-            const entries = this.getEntries().filter(e => e.id !== id);
-            localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
-        },
-        getApiKey: function() {
-            return localStorage.getItem(STORAGE_KEY_API_KEY);
-        },
-        setApiKey: function(key) {
-            localStorage.setItem(STORAGE_KEY_API_KEY, key);
+        te: {
+            tagline:     'మీ ఆలోచనలకు ఒక వెచ్చని స్థలం.',
+            heading:     'మీరు ఎలా అనుకుంటున్నారు?',
+            placeholder: 'మీ రోజు గురించి కొంచెం రాయండి...',
+            saveBtn:     'సేవ్ చేయి & రిఫ్లెక్ట్',
+            reflecting:  'రిఫ్లెక్ట్ అవుతోంది...',
+            history:     'గత నమోదులు',
+            noEntries:   'ఇంకా ఎంట్రీలు లేవు. మీ మూడ్ లాగ్ చేయండి!',
+            deleteConfirm: 'మీరు ఈ ఎంట్రీని తొలగించాలనుకుంటున్నారా?',
+            errMood:     'దయచేసి ఒక మూడ్ ఎంచుకోండి.',
+            errNote:     'దయచేసి ఒక చిన్న నోట్ రాయండి.',
+            errFail:     'రిఫ్లెక్షన్ పొందడంలో విఫలమైంది: ',
+            reflectionLabel: 'రిఫ్లెక్షన్',
+            settingsSaved: 'సెట్టింగులు సేవ్ అయ్యాయి!',
+            langPrompt:  'తెలుగులో సమాధానం ఇవ్వండి.'
         }
     };
 
+    // ── App State ─────────────────────────────────────────────
+    let selectedMood = null;
+    let currentLang  = localStorage.getItem(KEYS.LANG) || 'en';
+
+    function t(key) { return T[currentLang][key] || T['en'][key]; }
+
+    // ── Storage ───────────────────────────────────────────────
+    const Storage = {
+        getEntries:  () => JSON.parse(localStorage.getItem(KEYS.ENTRIES) || '[]'),
+        saveEntry(entry) {
+            const entries = this.getEntries();
+            entries.unshift(entry);
+            localStorage.setItem(KEYS.ENTRIES, JSON.stringify(entries));
+        },
+        deleteEntry(id) {
+            const entries = this.getEntries().filter(e => e.id !== id);
+            localStorage.setItem(KEYS.ENTRIES, JSON.stringify(entries));
+        },
+        getApiKey:  () => localStorage.getItem(KEYS.API_KEY),
+        setApiKey:  (k) => localStorage.setItem(KEYS.API_KEY, k),
+        getProvider:() => localStorage.getItem(KEYS.PROVIDER) || 'ollama',
+        setProvider:(p) => localStorage.setItem(KEYS.PROVIDER, p),
+        getModel:   () => localStorage.getItem(KEYS.MODEL) || 'llama3.2',
+        setModel:   (m) => localStorage.setItem(KEYS.MODEL, m)
+    };
+
+    // ── Journal Entry Factory ─────────────────────────────────
+    function createEntry(mood, note, reflection) {
+        return { id: Date.now().toString(), mood, note, reflection, timestamp: Date.now(), lang: currentLang };
+    }
+
+    // ── Mood Emoji Map ────────────────────────────────────────
+    function getMoodEmoji(mood) {
+        return { Happy:'😊', Neutral:'😐', Anxious:'😰', Sad:'😢', Excited:'🤩' }[mood] || '🤔';
+    }
+
+    // ── AI API Calls ──────────────────────────────────────────
+    // Each provider has its own fetch logic.
+    // They all receive the same prompt and return a string.
+
+    async function callOllama(prompt) {
+        const model = Storage.getModel();
+        let res;
+        try {
+            res = await fetch('http://localhost:11434/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model, prompt, stream: false })
+            });
+        } catch (e) {
+            throw new Error('Could not connect to Ollama. Make sure Ollama is running with CORS enabled.\n\nOpen CMD and run:\n  set OLLAMA_ORIGINS=*\n  ollama serve');
+        }
+        if (!res.ok) throw new Error('Ollama responded with an error. Is your model name correct? Check the model name in Settings.');
+        const data = await res.json();
+        return data.response;
+    }
+
+    async function callGemini(prompt, apiKey) {
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            }
+        );
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Gemini request failed'); }
+        const data = await res.json();
+        return data.candidates[0].content.parts[0].text;
+    }
+
+    async function callOpenAI(prompt, apiKey) {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'gpt-3.5-turbo', max_tokens: 300, messages: [{ role: 'user', content: prompt }] })
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'OpenAI request failed'); }
+        const data = await res.json();
+        return data.choices[0].message.content;
+    }
+
+    async function callGroq(prompt, apiKey) {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'llama3-8b-8192', max_tokens: 300, messages: [{ role: 'user', content: prompt }] })
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Groq request failed'); }
+        const data = await res.json();
+        return data.choices[0].message.content;
+    }
+
+    async function generateReflection(mood, note) {
+        const provider = Storage.getProvider();
+        const apiKey   = Storage.getApiKey();
+        const langPrompt = t('langPrompt');
+        const prompt = `Mood: ${mood}\nNote: ${note}\n\nPlease provide a warm, empathetic reflection in 2-3 sentences. ${langPrompt}`;
+
+        if (provider !== 'ollama' && !apiKey) {
+            throw new Error('No API key found. Please open Settings and enter your key.');
+        }
+
+        if (provider === 'ollama')  return callOllama(prompt);
+        if (provider === 'gemini')  return callGemini(prompt, apiKey);
+        if (provider === 'openai')  return callOpenAI(prompt, apiKey);
+        if (provider === 'groq')    return callGroq(prompt, apiKey);
+        throw new Error('Unknown provider selected.');
+    }
+
+    // ── UI Helpers ────────────────────────────────────────────
     const UI = {
-        showError: function(message) {
-            alert('Error: ' + message);
+        showError(msg) { alert('Error: ' + msg); },
+        toggleLoading(show) {
+            const el = document.getElementById('loading-indicator');
+            if (el) el.style.display = show ? 'block' : 'none';
         },
-        notify: function(message) {
-            console.log('Notification: ' + message);
-        },
-        toggleLoading: function(show) {
-            const indicator = document.getElementById('loading-indicator');
-            if (indicator) {
-                indicator.style.display = show ? 'block' : 'none';
-            }
-        },
-        showReflection: function(text) {
+        showReflection(text) {
             const display = document.getElementById('reflection-display');
-            const textElement = document.getElementById('reflection-text');
-            if (display && textElement) {
-                textElement.textContent = text;
-                display.classList.add('active');
-            }
+            const textEl  = document.getElementById('reflection-text');
+            if (display && textEl) { textEl.textContent = text; display.classList.add('active'); }
         },
-        hideReflection: function() {
+        hideReflection() {
             const display = document.getElementById('reflection-display');
-            if (display) {
-                display.classList.remove('active');
-            }
+            if (display) display.classList.remove('active');
         },
-        renderHistory: function(entries) {
+        renderHistory(entries) {
             const list = document.getElementById('history-list');
             if (!list) return;
-
             if (entries.length === 0) {
-                list.innerHTML = '<p style="text-align: center; opacity: 0.6;">No entries yet. Start by logging your mood!</p>';
+                list.innerHTML = `<p style="text-align:center;opacity:0.6;">${t('noEntries')}</p>`;
                 return;
             }
-
             list.innerHTML = entries.map(entry => `
                 <article class="history-card" data-id="${entry.id}">
                     <button class="delete-btn" aria-label="Delete entry" title="Delete entry">&times;</button>
                     <div class="card-header">
                         <div class="card-mood">${getMoodEmoji(entry.mood)} ${entry.mood}</div>
-                        <time class="card-date" datetime="${new Date(entry.timestamp).toISOString()}">
-                            ${new Date(entry.timestamp).toLocaleString()}
-                        </time>
+                        <time class="card-date">${new Date(entry.timestamp).toLocaleString()}</time>
                     </div>
                     <p class="card-note">"${entry.note}"</p>
                     <div class="card-reflection">
-                        <strong>Reflection:</strong> ${entry.reflection}
+                        <strong>${T[entry.lang] ? T[entry.lang]['reflectionLabel'] : T['en']['reflectionLabel']}:</strong> ${entry.reflection}
                     </div>
                 </article>
             `).join('');
 
             list.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', e => {
                     const id = e.target.closest('.history-card').getAttribute('data-id');
-                    if (confirm('Are you sure you want to delete this entry?')) {
+                    if (confirm(t('deleteConfirm'))) {
                         Storage.deleteEntry(id);
                         this.renderHistory(Storage.getEntries());
                     }
@@ -109,133 +228,130 @@
         }
     };
 
-    function getMoodEmoji(mood) {
-        const emojis = {
-            'Happy': '😊',
-            'Neutral': '😐',
-            'Anxious': '😰',
-            'Sad': '😢',
-            'Excited': '🤩'
-        };
-        return emojis[mood] || '🤔';
-    }
+    // ── Language Switcher ─────────────────────────────────────
+    // Updates all translatable text on the page when language changes
+    function applyLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem(KEYS.LANG, lang);
 
-    const ClaudeAPI = {
-        generateReflection: async function(mood, note) {
-            const apiKey = Storage.getApiKey();
-            if (!apiKey) throw new Error('API Key missing');
+        // Update active button
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === lang);
+        });
 
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                {
-                                    text: `Mood: ${mood}\nNote: ${note}\n\nPlease provide a warm, empathetic reflection in 2-3 sentences.`
-                                }
-                            ]
-                        }
-                    ]
-                })
-            });
+        // Update static text
+        const tagline = document.getElementById('tagline');
+        if (tagline) tagline.textContent = t('tagline');
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error?.message || 'API request failed');
-            }
-
-            const data = await response.json();
-            return data.candidates[0].content.parts[0].text;
-        }
-    };
-
-    function ensureApiKey() {
-        const hardcodedKey = 'AQ.Ab8RN6IcN4hMtLjti7azAMEVdVS00klfWg7jnZlqGECps0Qlww';
-        Storage.setApiKey(hardcodedKey);
-        return hardcodedKey;
-    }
-
-    function init() {
-        console.log('Reflct initialized');
-        ensureApiKey();
+        // Re-render app content with new language
         renderApp();
         UI.renderHistory(Storage.getEntries());
     }
 
-    let selectedMood = null;
+    // ── Settings Modal ────────────────────────────────────────
+    function setupSettingsModal() {
+        const modal      = document.getElementById('settings-modal');
+        const openBtn    = document.getElementById('settings-btn');
+        const closeBtn   = document.getElementById('close-settings');
+        const saveBtn    = document.getElementById('save-settings-btn');
+        const providerEl = document.getElementById('ai-provider');
+        const keyEl      = document.getElementById('api-key-input');
+        const toggleKey  = document.getElementById('toggle-key');
+        const keySection = document.getElementById('key-section');
+        const ollamaInfo = document.getElementById('ollama-info');
+        const modelEl    = document.getElementById('ollama-model');
 
+        // Pre-fill with saved values
+        providerEl.value = Storage.getProvider();
+        keyEl.value      = Storage.getApiKey() || '';
+        modelEl.value    = Storage.getModel();
+        toggleProviderUI(providerEl.value);
+
+        // Show/hide key field based on provider
+        function toggleProviderUI(provider) {
+            const isOllama = provider === 'ollama';
+            keySection.style.display  = isOllama ? 'none' : 'block';
+            ollamaInfo.style.display  = isOllama ? 'block' : 'none';
+        }
+
+        providerEl.addEventListener('change', () => toggleProviderUI(providerEl.value));
+
+        // Show/hide API key visibility
+        toggleKey.addEventListener('click', () => {
+            keyEl.type = keyEl.type === 'password' ? 'text' : 'password';
+        });
+
+        openBtn.addEventListener('click', () => modal.classList.add('open'));
+        closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+        modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+        saveBtn.addEventListener('click', () => {
+            Storage.setProvider(providerEl.value);
+            if (keyEl.value.trim()) Storage.setApiKey(keyEl.value.trim());
+            if (modelEl.value.trim()) Storage.setModel(modelEl.value.trim());
+            modal.classList.remove('open');
+            alert(t('settingsSaved'));
+        });
+    }
+
+    // ── Render Main App ───────────────────────────────────────
     function renderApp() {
-        const mainContent = document.getElementById('main-content');
-        if (!mainContent) return;
+        const main = document.getElementById('main-content');
+        if (!main) return;
 
-        mainContent.innerHTML = `
+        main.innerHTML = `
             <section id="mood-entry" aria-labelledby="entry-heading">
-                <h2 id="entry-heading">How are you feeling?</h2>
+                <h2 id="entry-heading">${t('heading')}</h2>
                 <div id="mood-options" role="group" aria-label="Mood selection">
-                    <button class="mood-btn" data-mood="Happy" aria-label="Feeling Happy">😊<span>Happy</span></button>
-                    <button class="mood-btn" data-mood="Neutral" aria-label="Feeling Neutral">😐<span>Neutral</span></button>
-                    <button class="mood-btn" data-mood="Anxious" aria-label="Feeling Anxious">😰<span>Anxious</span></button>
-                    <button class="mood-btn" data-mood="Sad" aria-label="Feeling Sad">😢<span>Sad</span></button>
-                    <button class="mood-btn" data-mood="Excited" aria-label="Feeling Excited">🤩<span>Excited</span></button>
+                    <button class="mood-btn" data-mood="Happy">😊<span>Happy</span></button>
+                    <button class="mood-btn" data-mood="Neutral">😐<span>Neutral</span></button>
+                    <button class="mood-btn" data-mood="Anxious">😰<span>Anxious</span></button>
+                    <button class="mood-btn" data-mood="Sad">😢<span>Sad</span></button>
+                    <button class="mood-btn" data-mood="Excited">🤩<span>Excited</span></button>
                 </div>
-                <textarea id="note-input" aria-label="Journal note" placeholder="Write a short note about your day..."></textarea>
-                <button id="save-btn" aria-live="polite">Save & Reflect</button>
-                
-                <div id="loading-indicator" aria-hidden="true">
+                <textarea id="note-input" placeholder="${t('placeholder')}"></textarea>
+                <button id="save-btn">${t('saveBtn')}</button>
+                <div id="loading-indicator">
                     <div class="spinner"></div>
-                    <p>Reflecting...</p>
+                    <p>${t('reflecting')}</p>
                 </div>
-                
-                <div id="reflection-display" aria-live="assertive">
-                    <strong>Reflection:</strong>
+                <div id="reflection-display">
+                    <strong>${t('reflectionLabel')}:</strong>
                     <p id="reflection-text"></p>
                 </div>
             </section>
             <hr>
             <section id="history" aria-labelledby="history-heading">
-                <h2 id="history-heading">History</h2>
+                <h2 id="history-heading">${t('history')}</h2>
                 <div id="history-list"></div>
             </section>
         `;
 
-        setupEventListeners();
+        setupEntryListeners();
     }
 
-    function setupEventListeners() {
-        const moodButtons = document.querySelectorAll('.mood-btn');
-        const saveBtn = document.getElementById('save-btn');
-        const noteInput = document.getElementById('note-input');
+    // ── Entry Form Listeners ──────────────────────────────────
+    function setupEntryListeners() {
+        selectedMood = null;
 
-        moodButtons.forEach(btn => {
+        document.querySelectorAll('.mood-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                moodButtons.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 selectedMood = btn.getAttribute('data-mood');
                 UI.hideReflection();
             });
         });
 
-        saveBtn.addEventListener('click', async () => {
-            const note = noteInput.value.trim();
-
-            if (!selectedMood) {
-                UI.showError('Please select a mood.');
-                return;
-            }
-
-            if (!note) {
-                UI.showError('Please write a short note.');
-                return;
-            }
-
+        document.getElementById('save-btn').addEventListener('click', () => {
+            const note = document.getElementById('note-input').value.trim();
+            if (!selectedMood) { UI.showError(t('errMood')); return; }
+            if (!note)         { UI.showError(t('errNote')); return; }
             handleSubmission(selectedMood, note);
         });
     }
 
+    // ── Submission Flow ───────────────────────────────────────
     async function handleSubmission(mood, note) {
         const saveBtn = document.getElementById('save-btn');
         saveBtn.disabled = true;
@@ -243,25 +359,37 @@
         UI.hideReflection();
 
         try {
-            const reflection = await ClaudeAPI.generateReflection(mood, note);
-            
-            const entry = createJournalEntry(mood, note, reflection);
+            const reflection = await generateReflection(mood, note);
+            const entry = createEntry(mood, note, reflection);
             Storage.saveEntry(entry);
-            
             UI.showReflection(reflection);
             UI.renderHistory(Storage.getEntries());
-            UI.notify('Entry saved!');
-            
             document.getElementById('note-input').value = '';
             document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
-            selectedMood = null; 
-            
-        } catch (error) {
-            UI.showError('Failed to get reflection: ' + error.message);
+            selectedMood = null;
+        } catch (err) {
+            UI.showError(t('errFail') + err.message);
         } finally {
             UI.toggleLoading(false);
             saveBtn.disabled = false;
         }
+    }
+
+    // ── Init ──────────────────────────────────────────────────
+    function init() {
+        // Apply saved language
+        applyLanguage(currentLang);
+
+        // Language switcher buttons
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => applyLanguage(btn.dataset.lang));
+        });
+
+        // Settings modal
+        setupSettingsModal();
+
+        // Render history
+        UI.renderHistory(Storage.getEntries());
     }
 
     document.addEventListener('DOMContentLoaded', init);

@@ -24,17 +24,45 @@ Reflct lowers the barrier to journaling by:
 2. Accepting a short free-text note about your day
 3. Using AI to respond with a thoughtful, empathetic reflection — making you feel heard
 
-It's like having a non-judgmental friend who always responds.
-
 ---
 
 ## Features
 
 - Mood selector (Happy, Neutral, Anxious, Sad, Excited)
 - Free-text journal entry input
-- AI-generated reflection using the Claude API
+- AI-generated reflection
+- Multilingual UI — English, हिंदी, తెలుగు (i18n support)
+- AI replies in the user's selected language automatically
 - Past entries saved locally in the browser (localStorage)
 - Scrollable history of previous moods and reflections
+
+---
+
+## AI Support
+
+Reflct supports multiple AI providers — users can choose based on their preference:
+
+| Provider | Type | Key Required? |
+|----------|------|--------------|
+| 🦙 Ollama | Local (offline) | No |
+| ✨ Gemini | Online | Yes (free tier available) |
+| 🤖 OpenAI | Online | Yes |
+| ⚡ Groq | Online | Yes (free tier available) |
+
+**Local AI (Ollama) is the default** — no internet or API key needed. The app runs entirely on the user's machine.
+
+**BYOK (Bring Your Own Key)** — for online providers, users enter their own API key in the Settings panel. Keys are stored only in the browser's localStorage and never sent anywhere except directly to the chosen provider.
+
+---
+
+## i18n — Multilingual Support
+
+The app supports 3 languages:
+- **English**
+- **हिंदी** (Hindi)
+- **తెలుగు** (Telugu)
+
+Switching languages updates all UI text instantly. The AI automatically replies in the selected language — no extra input needed from the user. Each past entry permanently remembers the language it was written in.
 
 ---
 
@@ -43,27 +71,32 @@ It's like having a non-judgmental friend who always responds.
 | Layer | Technology |
 |-------|-----------|
 | Frontend | HTML, CSS, Vanilla JavaScript |
-| AI | Claude API (claude-sonnet-4-20250514) |
+| Local AI | Ollama (llama3.2) |
+| Online AI | Gemini / OpenAI / Groq (BYOK) |
 | Storage | localStorage (no backend needed) |
-| Hosting | GitLab Pages |
+| Hosting | Vercel |
 
 ---
 
-## How It Works
+## How to Try It
 
-1. User selects a mood and types a short note about their day
-2. On submit, the app sends the mood + note to the Claude API with a prompt asking for an empathetic reflection
-3. The AI response is displayed on screen
-4. The entry (mood, note, AI reply, timestamp) is saved to localStorage
-5. Users can scroll through all past entries on the same page
+### Option 1 — Online (no setup needed)
+1. Visit the live link below
+2. Click ⚙️ Settings
+3. Select **Gemini** or **Groq** (both have free tiers)
+4. Paste your API key and click Save
+5. Pick a mood, write a note, hit **Save & Reflect**
 
----
-
-## Challenges Faced
-
-- Crafting a prompt that consistently returns warm, concise reflections without being generic
-- Handling API loading states gracefully in vanilla JS
-- Keeping the UI clean and calming without a CSS framework
+### Option 2 — Local AI (no API key needed)
+1. Install Ollama from [ollama.com](https://ollama.com)
+2. Run in terminal:
+   ```
+   ollama pull llama3.2
+   set OLLAMA_ORIGINS=*
+   ollama serve
+   ```
+3. Visit the live link, click ⚙️ Settings, select **Ollama**, save
+4. Pick a mood, write a note, hit **Save & Reflect**
 
 ---
 
@@ -71,15 +104,15 @@ It's like having a non-judgmental friend who always responds.
 
 - Mood trend chart (visualize emotions over time)
 - Daily journaling streak tracker
-- Option to export all entries as a text file
-- Mobile-friendly PWA version
+- Export entries as text file
+- Mobile PWA version
 
 ---
 
 ## Demo
 
-> Live link: *(add GitLab Pages URL here)*  
-> Repo: *(add GitLab repo URL here)*
+> Live link: https://reflct-coral.vercel.app/  
+> Repo: https://github.com/divyansh1157/reflct
 
 ---
 

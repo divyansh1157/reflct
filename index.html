@@ -1,26 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reflct - Mood Journal</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div id="app" class="container">
-        <header>
-            <h1>Reflct</h1>
-            <p>A warm space for your thoughts.</p>
-        </header>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reflct - Mood Journal</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div id="app" class="container">
+            <header>
+                <div class="header-top">
+                    <h1>Reflct</h1>
+                    <button id="settings-btn" aria-label="Open settings" title="Settings">⚙️</button>
+                </div>
+                <p id="tagline">A warm space for your thoughts.</p>
+                <div id="lang-switcher">
+                    <button class="lang-btn active" data-lang="en">English</button>
+                    <button class="lang-btn" data-lang="hi">हिंदी</button>
+                    <button class="lang-btn" data-lang="te">తెలుగు</button>
+                </div>
+            </header>
 
-        <main id="main-content" role="main">
-            <!-- Content will be injected by app.js -->
-        </main>
+            <main id="main-content" role="main">
+                <!-- Content will be injected by app.js -->
+            </main>
 
-        <footer>
-            <p>&copy; 2026 Reflct</p>
-        </footer>
-    </div>
-    <script src="app.js"></script>
-</body>
+            <footer>
+                <p>&copy; 2026 Reflct</p>
+            </footer>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal-overlay" aria-hidden="true">
+            <div class="modal-box" role="dialog" aria-labelledby="settings-title">
+                <div class="modal-header">
+                    <h2 id="settings-title">⚙️ Settings</h2>
+                    <button id="close-settings" aria-label="Close settings">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <label for="ai-provider">AI Provider</label>
+                    <select id="ai-provider">
+                        <option value="ollama">🦙 Ollama (Local — No key needed)</option>
+                        <option value="gemini">✨ Gemini (Google)</option>
+                        <option value="openai">🤖 OpenAI (ChatGPT)</option>
+                        <option value="groq">⚡ Groq</option>
+                    </select>
+
+                    <div id="key-section">
+                        <label for="api-key-input">Your API Key</label>
+                        <div class="key-input-row">
+                            <input type="password" id="api-key-input" placeholder="Paste your API key here..." autocomplete="off"/>
+                            <button id="toggle-key" aria-label="Show/hide key">👁</button>
+                        </div>
+                        <p class="key-hint" id="key-hint">Your key is saved locally in your browser and never sent anywhere except the AI provider.</p>
+                    </div>
+
+                    <div id="ollama-info" class="info-box" style="display:none;">
+                        <p>🦙 <strong>Ollama</strong> runs AI locally on your machine.</p>
+                        <p>Make sure Ollama is installed and running, then select your model below.</p>
+                        <label for="ollama-model">Model</label>
+                        <input type="text" id="ollama-model" placeholder="e.g. llama3.2" value="llama3.2"/>
+                    </div>
+
+                    <button id="save-settings-btn">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="app.js"></script>
+    </body>
 </html>
