@@ -33,6 +33,7 @@ Reflct lowers the barrier to journaling by:
 - AI-generated reflection
 - Multilingual UI — English, हिंदी, తెలుగు (i18n support)
 - AI replies in the user's selected language automatically
+- Option to journal without AI — no setup required for basic use
 - Past entries saved locally in the browser (localStorage)
 - Scrollable history of previous moods and reflections
 

@@ -33,7 +33,8 @@
             errFail:     'Failed to get reflection: ',
             reflectionLabel: 'Reflection',
             settingsSaved: 'Settings saved!',
-            langPrompt:  'Reply in English.'
+            langPrompt:  'Reply in English.',
+            skipBtn:     'Skip AI & Just Save'
         },
         hi: {
             tagline:     'आपके विचारों के लिए एक गर्म जगह।',
@@ -49,7 +50,8 @@
             errFail:     'रिफ्लेक्शन प्राप्त करने में विफल: ',
             reflectionLabel: 'विचार',
             settingsSaved: 'सेटिंग्स सहेजी गईं!',
-            langPrompt:  'हिंदी में उत्तर दें।'
+            langPrompt:  'हिंदी में उत्तर दें।',
+            skipBtn:     'AI छोड़ें और सहेजें'
         },
         te: {
             tagline:     'మీ ఆలోచనలకు ఒక వెచ్చని స్థలం.',
@@ -65,7 +67,8 @@
             errFail:     'రిఫ్లెక్షన్ పొందడంలో విఫలమైంది: ',
             reflectionLabel: 'రిఫ్లెక్షన్',
             settingsSaved: 'సెట్టింగులు సేవ్ అయ్యాయి!',
-            langPrompt:  'తెలుగులో సమాధానం ఇవ్వండి.'
+            langPrompt:  'తెలుగులో సమాధానం ఇవ్వండి.',
+            skipBtn:     'AI వదిలి సేవ్ చేయి'
         }
     };
 
@@ -311,6 +314,7 @@
                 </div>
                 <textarea id="note-input" placeholder="${t('placeholder')}"></textarea>
                 <button id="save-btn">${t('saveBtn')}</button>
+                <button id="skip-btn">${t('skipBtn')}</button>
                 <div id="loading-indicator">
                     <div class="spinner"></div>
                     <p>${t('reflecting')}</p>
@@ -349,6 +353,13 @@
             if (!note)         { UI.showError(t('errNote')); return; }
             handleSubmission(selectedMood, note);
         });
+
+        document.getElementById('skip-btn').addEventListener('click', () => {
+            const note = document.getElementById('note-input').value.trim();
+            if (!selectedMood) { UI.showError(t('errMood')); return; }
+            if (!note)         { UI.showError(t('errNote')); return; }
+            handleSkip(selectedMood, note);
+        });
     }
 
     // ── Submission Flow ───────────────────────────────────────
@@ -373,6 +384,16 @@
             UI.toggleLoading(false);
             saveBtn.disabled = false;
         }
+    }
+
+    // ── Skip AI Flow ──────────────────────────────────────────
+    function handleSkip(mood, note) {
+        const entry = createEntry(mood, note, '—');
+        Storage.saveEntry(entry);
+        UI.renderHistory(Storage.getEntries());
+        document.getElementById('note-input').value = '';
+        document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+        selectedMood = null;
     }
 
     // ── Init ──────────────────────────────────────────────────

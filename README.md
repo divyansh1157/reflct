@@ -15,6 +15,7 @@ Supports **3 languages** (English, हिंदी, తెలుగు) and mult
 - AI-generated empathetic reflection
 - Supports **Ollama (local/offline)**, Gemini, OpenAI, and Groq
 - BYOK — Bring Your Own Key for online providers
+- Journal without AI using "Skip AI & Just Save"
 - i18n support — English, Hindi, Telugu
 - Past entries saved in browser (no login needed)
 - Clean, distraction-free UI
