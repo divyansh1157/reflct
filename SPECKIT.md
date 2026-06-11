@@ -118,4 +118,4 @@ Switching languages updates all UI text instantly. The AI automatically replies 
 
 ---
 
-*Built solo at Hackathon 2*
+*Built solo*

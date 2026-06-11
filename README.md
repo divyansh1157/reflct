@@ -116,4 +116,4 @@ https://reflct-coral.vercel.app/
 
 ---
 
-*Built solo at Hackathon 2*
+*Built solo*
