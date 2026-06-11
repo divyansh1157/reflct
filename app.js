@@ -90,8 +90,8 @@
             const entries = this.getEntries().filter(e => e.id !== id);
             localStorage.setItem(KEYS.ENTRIES, JSON.stringify(entries));
         },
-        getApiKey:  () => localStorage.getItem(KEYS.API_KEY),
-        setApiKey:  (k) => localStorage.setItem(KEYS.API_KEY, k),
+        getApiKey:  (provider) => localStorage.getItem('reflct_key_' + (provider || Storage.getProvider())),
+        setApiKey:  (k, provider) => localStorage.setItem('reflct_key_' + (provider || Storage.getProvider()), k),
         getProvider:() => localStorage.getItem(KEYS.PROVIDER) || 'ollama',
         setProvider:(p) => localStorage.setItem(KEYS.PROVIDER, p),
         getModel:   () => localStorage.getItem(KEYS.MODEL) || 'llama3.2',
@@ -158,7 +158,7 @@
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: 'llama3-8b-8192', max_tokens: 300, messages: [{ role: 'user', content: prompt }] })
+            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 300, messages: [{ role: 'user', content: prompt }] })
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Groq request failed'); }
         const data = await res.json();
@@ -167,7 +167,7 @@
 
     async function generateReflection(mood, note) {
         const provider = Storage.getProvider();
-        const apiKey   = Storage.getApiKey();
+        const apiKey   = Storage.getApiKey(provider);
         const langPrompt = t('langPrompt');
         const recentEntries = Storage.getEntries().slice(0, 3);
         const context = recentEntries.length > 0
@@ -270,7 +270,7 @@
 
         // Pre-fill with saved values
         providerEl.value = Storage.getProvider();
-        keyEl.value      = Storage.getApiKey() || '';
+        keyEl.value      = Storage.getApiKey(providerEl.value) || '';
         modelEl.value    = Storage.getModel();
         toggleProviderUI(providerEl.value);
 
@@ -281,7 +281,10 @@
             ollamaInfo.style.display  = isOllama ? 'block' : 'none';
         }
 
-        providerEl.addEventListener('change', () => toggleProviderUI(providerEl.value));
+        providerEl.addEventListener('change', () => {
+            toggleProviderUI(providerEl.value);
+            keyEl.value = Storage.getApiKey(providerEl.value) || '';
+        });
 
         // Show/hide API key visibility
         toggleKey.addEventListener('click', () => {
@@ -294,7 +297,7 @@
 
         saveBtn.addEventListener('click', () => {
             Storage.setProvider(providerEl.value);
-            if (keyEl.value.trim()) Storage.setApiKey(keyEl.value.trim());
+            if (keyEl.value.trim()) Storage.setApiKey(keyEl.value.trim(), providerEl.value);
             if (modelEl.value.trim()) Storage.setModel(modelEl.value.trim());
             modal.classList.remove('open');
             alert(t('settingsSaved'));
